@@ -12,6 +12,22 @@ let
         machine.screenshot("01-login")
         machine.send_chars("tester\n")
   '';
+  # Opens SnapGuard and a terminal with fastfetch inside the running session,
+  # for a clean picture of the desktop with SnapOS programs on it.
+  showcase = pkgs.writeShellScript "snapos-showcase" ''
+    pid=$(pgrep -u tester -n -f '(budgie-panel|plasmashell|xfce4-panel|waybar)')
+    [ -n "$pid" ] || exit 0
+    eval "export $(tr '\0' '\n' < /proc/$pid/environ | grep -E '^(DISPLAY|WAYLAND_DISPLAY|XAUTHORITY|XDG_RUNTIME_DIR|DBUS_SESSION_BUS_ADDRESS|XDG_CURRENT_DESKTOP|GTK_THEME|HYPRLAND_INSTANCE_SIGNATURE)=' | sed 's/^/"/; s/$/"/' | tr '\n' ' ')"
+    cd "$HOME"
+    run() { setsid "$@" >/dev/null 2>&1 & }
+    if command -v kitty >/dev/null && [ -n "$HYPRLAND_INSTANCE_SIGNATURE" ]; then run kitty sh -c 'fastfetch; sleep 600'
+    elif command -v konsole >/dev/null; then run konsole -e sh -c 'fastfetch; sleep 600'
+    elif command -v xfce4-terminal >/dev/null; then run xfce4-terminal -x sh -c 'fastfetch; sleep 600'
+    elif command -v gnome-terminal >/dev/null; then run gnome-terminal -- sh -c 'fastfetch; sleep 600'
+    fi
+    sleep 4
+    run snapguard
+  '';
   mk = { name, desktop, appearance ? "dark", processes, extra ? "", vm ? { }, autoLogin ? false, login ? loginScreen }:
     pkgs.testers.runNixOSTest {
       name = "snapos-${name}";
@@ -86,6 +102,12 @@ let
             machine.succeed("grep -q 'PRETTY_NAME=\"SnapOS ' /etc/os-release")
             ${let ls = pkgs.lib.splitString "\n" extra; in pkgs.lib.concatStringsSep "\n" ([ (builtins.head ls) ] ++ map (l: "    " + l) (builtins.tail ls))}
             machine.screenshot("09-final")
+            machine.execute("pkill -u tester -f '[s]naphelper'; pkill -u tester -f '[s]napupdate'")
+            machine.sleep(5)
+            machine.screenshot("10-clean")
+            machine.execute("su tester -c ${showcase}")
+            machine.sleep(25)
+            machine.screenshot("11-apps")
         finally:
             machine.screenshot("08-last")
             machine.execute("journalctl -b --no-pager > /tmp/journal.txt")
