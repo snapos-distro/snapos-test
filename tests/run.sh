@@ -626,7 +626,7 @@ check "the login window knows about package updates" bash -c "grep -q 'Package u
 check "on ARM64 the system is named SnapOS ... ARM" bash -c "grep -q 'isAarch64 \" ARM\"' '$ROOT/nix/modules/snapos.nix' && grep -q 'VARIANT_ID=arm64' '$ROOT/nix/modules/snapos.nix'"
 
 section "releases"
-check "builds and tests run in the staging repository only" bash -c "for w in desktop-test build-nixos-iso build-nixos-iso-arm snap-deb; do grep -q \"github.repository == 'Juco7L7/snapos-test'\" '$ROOT/.github/workflows/'\$w.yml || exit 1; done"
+check "builds and tests run in the staging repository only" bash -c "for w in desktop-test build-nixos-iso build-nixos-iso-arm snap-deb; do grep -q \"github.repository == 'snapos-distro/snapos-test'\" '$ROOT/.github/workflows/'\$w.yml || exit 1; done"
 check "the official draft is a copy of a tested build of the same commit" bash -c "grep -q 'test \"\$commit\" = \"\$GITHUB_SHA\"' '$ROOT/.github/workflows/draft-release.yml' && grep -q 'sha256sum -c' '$ROOT/.github/workflows/draft-release.yml' && grep -q -- '--draft' '$ROOT/.github/workflows/draft-release.yml'"
 check "both architectures of a release come from one commit" grep -q 'test "\$a" = "\$b"' "$ROOT/.github/workflows/collect-release.yml"
 check "this version has its release notes" test -s "$ROOT/docs/releases/$(cat "$ROOT/VERSION").md"

@@ -21,7 +21,7 @@
 <a name="before-you-install"></a>
 
 > [!NOTE]
-> **This is the staging repository for SnapOS.** New features and fixes are developed and tested here first. When an update is verified it is carried over to [SnapOS](https://github.com/Juco7L7/SnapOS), the repository that ships the installer ISO.
+> **This is the staging repository for SnapOS.** New features and fixes are developed and tested here first. When an update is verified it is carried over to [SnapOS](https://github.com/snapos-distro/SnapOS), the repository that ships the installer ISO.
 
 > [!CAUTION]
 > **Flash with balenaEtcher.** Do not copy the file onto the drive by hand, and
