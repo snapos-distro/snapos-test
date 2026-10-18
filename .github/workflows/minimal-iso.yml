@@ -114,7 +114,12 @@ jobs:
                   log.write(d); log.flush(); buf += d
               i = buf.index(token.encode()); out = buf[:i]; buf = buf[i + len(token):]; return out.decode(errors="replace")
           read_until("mypc login:", 900); print("login prompt", flush=True)
-          time.sleep(3); s.sendall(b"ana\n"); read_until("assword:", 60); s.sendall(b"snapos\n")
+          time.sleep(3); s.sendall(b"ana\n")
+          end = time.time() + 60                     # "Password:" or "Senha:" (the handbook's file is pt_BR)
+          while b"assword:" not in buf and b"enha:" not in buf and time.time() < end:
+              try: buf += s.recv(65536)
+              except socket.timeout: pass
+          buf = b""; s.sendall(b"snapos\n")
           time.sleep(8)
           for n, cmd in enumerate(["snapos version", "snapos list", "snapguard status; true", "snap-deb status; true", "cat /etc/snapos/appearance", "test -L /etc/nixos && ls /etc/snapos/flake.nix", "systemctl is-enabled snapos-update-guard", "snapos list | grep -q firefox"]):
               s.sendall(('%s; echo @@C""%d=$?\n' % (cmd, n)).encode())
