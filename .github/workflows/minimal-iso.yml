@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
   push:
     branches: [ main ]
-    paths: [ "nix/minimal.nix", "nix/packs/**", "docs/handbook/**", ".github/workflows/minimal-iso.yml" ]
+    paths: [ "nix/minimal.nix", "nix/packs/**", "nix/pkgs/snapos-nix-tools.nix", "docs/handbook/**", ".github/workflows/minimal-iso.yml" ]
 
 permissions:
   contents: write
