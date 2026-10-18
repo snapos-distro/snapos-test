@@ -125,12 +125,13 @@ rebuild: it is gone, with nothing left behind.
 
 **Three steps:**
 
-1. **Download** the ISO from the Releases page.
+1. **Download** the universal image from the
+   [Releases page](https://github.com/snapos-distro/SnapOS/releases/latest).
 
-   | Your computer | File |
-   | --- | --- |
-   | A PC (x86_64, BIOS or UEFI) | `snapos-installer.iso` |
-   | An ARM64 computer (UEFI) | `snapos-installer-aarch64.iso` |
+   | Your computer | Universal (installer) | Manual (minimal) |
+   | --- | --- | --- |
+   | A PC (x86_64, BIOS or UEFI) | `snapos-installer.iso` | `snapos-minimal.iso` |
+   | An ARM64 computer (UEFI) | `snapos-installer-aarch64.iso` | `snapos-minimal-aarch64.iso` |
 
 2. **Flash** it to a USB drive with [balenaEtcher](https://etcher.balena.io).
 3. **Boot** from the USB drive. The installer starts by itself.
@@ -141,7 +142,7 @@ checks it, and installs it, so an older USB stick still installs the latest
 version. Without the internet it installs the version on the stick. The review
 screen shows which one.
 
-**Building it yourself instead?** The minimal image is a terminal: you write
+**Building it yourself instead?** The manual (minimal) image is a terminal: you write
 your own NixOS system and add the SnapOS packs you want. The
 [handbook](https://snapos-distro.github.io/handbook/) shows every step.
 

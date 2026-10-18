@@ -48,12 +48,9 @@ jobs:
 
       - name: Create the draft
         run: |
-          version=$(sed -n 's/^version=//p' snapos-release.txt)
-          notes="docs/releases/$version.md"
-          test -f "$notes"
+          # only the images: SnapOS versions live in snapos-updates
           gh release create "${{ inputs.tag }}" --draft --target "$GITHUB_SHA" \
-            --title "${{ inputs.title }}" --notes-file "$notes" \
+            --title "${{ inputs.title }}" --notes-file docs/releases/images.md \
             snapos-installer.iso snapos-installer.iso.sha256 \
             snapos-installer-aarch64.iso snapos-installer-aarch64.iso.sha256 \
-            snapos-minimal.iso snapos-minimal.iso.sha256 snapos-minimal-aarch64.iso snapos-minimal-aarch64.iso.sha256 \
-            snapos-source.tar.gz snapos-source.tar.gz.sha256 snapos-release.txt
+            snapos-minimal.iso snapos-minimal.iso.sha256 snapos-minimal-aarch64.iso snapos-minimal-aarch64.iso.sha256
