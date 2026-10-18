@@ -1,15 +1,16 @@
 name: Minimal ISO
 
-# Builds the SnapOS minimal USB and installs SnapOS from it by hand, typing
+# Builds the SnapOS minimal USB and builds a system by hand from it, typing
 # the handbook's commands on its serial console: partition, format, mount,
-# snapos init, choose in local.nix, snapos install. Then the installed
-# system has to reach its login prompt.
+# generate the hardware file, write flake.nix and configuration.nix (the
+# handbook's own files, with the SnapOS packs), nixos-install. Then the new
+# system must reach its login prompt, and the packs must work after login.
 
 on:
   workflow_dispatch:
   push:
     branches: [ main ]
-    paths: [ "nix/minimal.nix", "nix/minimal/**", ".github/workflows/minimal-iso.yml" ]
+    paths: [ "nix/minimal.nix", "nix/packs/**", "docs/handbook/**", ".github/workflows/minimal-iso.yml" ]
 
 permissions:
   contents: write
@@ -73,32 +74,55 @@ jobs:
               rc = read_until("\n", 30).strip()
               print("  -> exit " + rc, flush=True)
               if rc != "0": sys.stdout.write(buf.decode(errors="replace")[-2000:]); raise SystemExit("step failed: " + cmd)
-          read_until("$ ", 600)                       # the live system is up, logged in
-          time.sleep(5)
+          read_until("(automatic login)", 900)        # the live system is up, logged in
+          time.sleep(20)
+          s.sendall(b'echo READ""Y\n'); read_until("READY", 120)
           run("lsblk")
           run("sudo parted -s /dev/vda -- mklabel gpt mkpart ESP fat32 1MiB 512MiB set 1 esp on mkpart root ext4 512MiB 100%")
           run("sudo mkfs.fat -F 32 -n boot /dev/vda1 && sudo mkfs.ext4 -F -L nixos /dev/vda2")
           run("sudo udevadm settle && sudo mount /dev/disk/by-label/nixos /mnt && sudo mkdir -p /mnt/boot && sudo mount -o umask=077 /dev/disk/by-label/boot /mnt/boot")
-          run("snapos init")
-          run("cat /mnt/etc/snapos/local.nix")
-          # the choices a person would type in nano (plus a serial console for this test)
-          run("sudo sed -i -e 's/snapos.desktop = \"budgie\"/snapos.desktop = \"xfce\"/' -e 's|^}$|  boot.kernelParams = [ \"console=ttyS0,115200\" ];\\n}|' /mnt/etc/snapos/local.nix && tail -4 /mnt/etc/snapos/local.nix")
-          run("sudo SNAPOS_PASSWORD=snapos snapos-install", timeout=7200)
+          run("sudo nixos-generate-config --root /mnt")
+          run("sudo cp /etc/snapos-src/docs/handbook/flake.nix /etc/snapos-src/docs/handbook/configuration.nix /mnt/etc/nixos/")
+          # only for this test: the packs of this very commit, which is not on GitHub's SnapOS yet
+          run("sudo cp -r /etc/snapos-src /mnt/etc/nixos/snapos && sudo chmod -R u+w /mnt/etc/nixos/snapos && sudo sed -i 's|github:snapos-distro/SnapOS|path:./snapos|' /mnt/etc/nixos/flake.nix")
+          run("sudo sed -i 's|^  system.stateVersion|  boot.kernelParams = [ \"console=ttyS0,115200\" ];\\n  system.stateVersion|' /mnt/etc/nixos/configuration.nix && grep -n 'snapos\\|kernelParams' /mnt/etc/nixos/*.nix")
+          run("sudo nixos-install --flake /mnt/etc/nixos#mypc --no-root-passwd", timeout=7200)
+          run("echo ana:snapos | sudo nixos-enter --root /mnt -c chpasswd")
           run("sudo umount -R /mnt && sync")
           print("installed", flush=True)
           PY
           kill $qemu; wait $qemu 2>/dev/null || true
-          echo "== booting the installed system"
+          echo "== booting the installed system and using the packs"
           q qemu-system-x86_64 -enable-kvm -m 4096 -smp 2 -bios "$fw" -drive file=disk.qcow2,if=virtio \
-            -nic user,model=virtio-net-pci -display none -serial file:boot2.log -monitor unix:mon2.sock,server,nowait &
+            -nic user,model=virtio-net-pci -display none -serial unix:serial2.sock,server,nowait -monitor unix:mon2.sock,server,nowait &
           qemu=$!
-          for i in $(seq 1 120); do grep -aq 'snapos login:' boot2.log && break; sleep 5; done
-          python3 -c "
-          import socket,time; s=socket.socket(socket.AF_UNIX); s.connect('mon2.sock'); time.sleep(1)
-          s.sendall(b'screendump installed.ppm\n'); time.sleep(3)" || true
+          python3 - <<'PY'
+          import socket, time, sys
+          s = socket.socket(socket.AF_UNIX)
+          for _ in range(60):
+              try: s.connect("serial2.sock"); break
+              except OSError: time.sleep(1)
+          log = open("boot2.log", "wb"); buf = b""
+          def read_until(token, timeout):
+              global buf
+              end = time.time() + timeout; s.settimeout(5)
+              while token.encode() not in buf:
+                  if time.time() > end:
+                      sys.stdout.write(buf[-3000:].decode(errors="replace")); raise SystemExit("timed out waiting for " + token)
+                  try: d = s.recv(65536)
+                  except socket.timeout: continue
+                  log.write(d); log.flush(); buf += d
+              i = buf.index(token.encode()); out = buf[:i]; buf = buf[i + len(token):]; return out.decode(errors="replace")
+          read_until("mypc login:", 900); print("login prompt", flush=True)
+          time.sleep(3); s.sendall(b"ana\n"); read_until("assword:", 60); s.sendall(b"snapos\n")
+          time.sleep(8)
+          for n, cmd in enumerate(["snapos version", "snapos list", "snapguard status; true", "snap-deb status; true", "cat /etc/snapos/appearance", "systemctl is-enabled snapos-update-guard"]):
+              s.sendall(('%s; echo @@C""%d=$?\n' % (cmd, n)).encode())
+              out = read_until("@@C%d=" % n, 120); rc = read_until("\n", 10).strip()
+              print("$ " + cmd + "  -> exit " + rc + "\n" + out[-600:], flush=True)
+              if rc != "0": raise SystemExit("failed: " + cmd)
+          PY
           kill $qemu 2>/dev/null; wait $qemu 2>/dev/null || true
-          tail -c 2000 boot2.log | tr -cd '[:print:]\n' | tail -15
-          grep -aq 'snapos login:' boot2.log
       - name: Keep the logs
         if: always()
         uses: actions/upload-artifact@v4

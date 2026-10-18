@@ -18,14 +18,18 @@
 
 #define SNAPOS_DIR  "/etc/snapos"
 #define LEGACY_DIR  "/etc/nixos"
-/* The system attribute in the flake: snapos on x86_64, snapos-aarch64 on ARM64. */
+static int custom_system(void);
+/* The system attribute in the flake: snapos on x86_64, snapos-aarch64 on ARM64,
+ * and the computer's name on a system built by hand. */
 static const char *flake_attr(void) {
     static char attr[64];
     if (attr[0]) return attr;
     const char *env = getenv("SNAPOS_FLAKE_ATTR");
     struct utsname u;
     if (env && *env) snprintf(attr, sizeof attr, "%s", env);
-    else if (uname(&u) == 0 && !strcmp(u.machine, "aarch64")) snprintf(attr, sizeof attr, "snapos-aarch64");
+    else if (custom_system()) {   /* the handbook names the system after the computer */
+        if (gethostname(attr, sizeof attr) != 0 || !attr[0]) snprintf(attr, sizeof attr, "nixos");
+    } else if (uname(&u) == 0 && !strcmp(u.machine, "aarch64")) snprintf(attr, sizeof attr, "snapos-aarch64");
     else snprintf(attr, sizeof attr, "snapos");
     return attr;
 }
@@ -38,6 +42,18 @@ static const char *flake_attr(void) {
 #define DIM "\033[2m"
 #define BLD "\033[1m"
 #define RST "\033[0m"
+
+static const char *nixdir(void);
+
+/* A system built by hand (the handbook): its own flake in /etc/nixos with the
+ * SnapOS packs as an input, instead of the SnapOS tree in /etc/snapos. */
+static int custom_system(void) {
+    char p[PATH_MAX];
+    snprintf(p, sizeof p, "%s/VERSION", nixdir());
+    if (access(p, F_OK) == 0) return 0;
+    snprintf(p, sizeof p, "%s/flake.nix", nixdir());
+    return access(p, F_OK) == 0;
+}
 
 static const char *nixdir(void) {
     const char *d = getenv("SNAPOS_NIX_DIR");
@@ -90,10 +106,6 @@ static void usage(FILE *out) {
         "  snapos update check      is there something new? (exit 10: a release,\n"
         "                           12: packages)\n"
         "  snapos version           the release this system runs\n"
-        "\n"
-        "Installing by hand (on the minimal USB)\n"
-        "  snapos init [/mnt]       prepare SnapOS on the mounted disk\n"
-        "  snapos install [/mnt]    install it, then set the passwords\n"
         "\n"
         "Coming from a Debian-based distro\n"
         "  apt search X       ->  snapos find X\n"
@@ -791,13 +803,15 @@ static int update_state(const char *cur, const Release *r, char *pending, size_t
  * (nixos-26.05), which is how the desktop and the programs get their fixes. */
 typedef struct { char rev[64], ref[64]; long modified; } Lock;
 
-static int read_lock(const char *dir, Lock *l) {
+static int read_lock_input(const char *dir, const char *input, Lock *l) {
     char p[PATH_MAX + 16];
     memset(l, 0, sizeof *l);
     snprintf(p, sizeof p, "%s/flake.lock", dir);
     char *json = slurp(p);
     if (!json) return 0;
-    const char *node = strstr(json, "\"nixpkgs\": {");
+    char key[64];
+    snprintf(key, sizeof key, "\"%s\": {", input);
+    const char *node = strstr(json, key);
     const char *locked = node ? strstr(node, "\"locked\"") : NULL;
     const char *orig = node ? strstr(node, "\"original\"") : NULL;
     if (locked) {
@@ -809,7 +823,7 @@ static int read_lock(const char *dir, Lock *l) {
     free(json);
     for (const char *c = l->ref; *c; c++)
         if (!isalnum((unsigned char)*c) && !strchr("._-", *c)) { l->ref[0] = 0; break; }
-    return l->rev[0] && l->ref[0];
+    return l->rev[0] && (l->ref[0] || strcmp(input, "nixpkgs") != 0);
 }
 
 /* The newest revision of the branch, asked from git (no GitHub API). */
@@ -831,6 +845,8 @@ static int newest_packages(const Lock *l, char *rev, size_t n) {
 }
 
 /* 1 = newer packages exist and the ones here are old enough to be worth it. */
+static int read_lock(const char *dir, Lock *l) { return read_lock_input(dir, "nixpkgs", l); }
+
 static int packages_available(char *newest, size_t n, Lock *l) {
     newest[0] = 0;
     if (!read_lock(nixdir(), l)) return 0;
@@ -855,6 +871,13 @@ static int cmd_update_check(void) {
     version_of(nixdir(), ver, sizeof ver);
     running_version(run, sizeof run);
     int st = update_state(cur, &r, pending, sizeof pending);
+    Lock sl;
+    if (custom_system() && read_lock_input(nixdir(), "snapos", &sl)) {
+        /* built by hand: only the packs come from SnapOS */
+        int built = read_pending(&(int){0}, &(int){0}, pending, sizeof pending);
+        st = same_commit(sl.rev, r.sha) ? (built ? 11 : 0) : 10;
+        snprintf(cur, sizeof cur, "%s", sl.rev);
+    }
     char newest[64];
     Lock l;
     int pk = packages_available(newest, sizeof newest, &l);
@@ -1065,7 +1088,10 @@ static void offer_restart(void) {
 
 /* Newer packages for the same SnapOS release: the desktop, the programs and
  * the kernel. Built for the next start, with the same one-try guard. */
-static int cmd_update_packages(const char *newest, const Lock *l) {
+static int cmd_update_input(const char *newest, const Lock *l, const char *input);
+static int cmd_update_packages(const char *newest, const Lock *l) { return cmd_update_input(newest, l, "nixpkgs"); }
+
+static int cmd_update_input(const char *newest, const Lock *l, const char *input) {
     char line[512];
     const char *target = nixdir();
     ustep = 1; uheader("Checking");
@@ -1083,7 +1109,7 @@ static int cmd_update_packages(const char *newest, const Lock *l) {
     char *keep[] = { "cp", "-a", (char *)target, olddir, NULL };
     if (run(keep) != 0) { ufail("Could not keep a copy of the current files."); return 1; }
     char *upd[] = { "nix", "--extra-experimental-features", "nix-command flakes",
-                    "flake", "update", "nixpkgs", "--flake", flake, NULL };
+                    "flake", "update", (char *)input, "--flake", flake, NULL };
     if (run(upd) != 0) {
         ufail("The package list could not be updated. Nothing changed.");
         char *rm_t[] = { "rm", "-rf", (char *)target, NULL };
@@ -1091,7 +1117,7 @@ static int cmd_update_packages(const char *newest, const Lock *l) {
         rename(olddir, target);
         return 1;
     }
-    uok("The desktop, the programs and the kernel follow the newest list");
+    uok(strcmp(input, "nixpkgs") ? "The SnapOS packs follow the newest release" : "The desktop, the programs and the kernel follow the newest list");
 
     ustep = 3; uheader("Building the next system");
     char *none[] = { NULL };
@@ -1102,7 +1128,7 @@ static int cmd_update_packages(const char *newest, const Lock *l) {
         rename(olddir, target);
         return 1;
     }
-    write_pending(previous, 0, "package updates");
+    write_pending(previous, 0, strcmp(input, "nixpkgs") ? "SnapOS packs" : "package updates");
     char rb[PATH_MAX];
     rolled_back_path(rb, sizeof rb);
     unlink(rb);
@@ -1131,6 +1157,12 @@ static int cmd_update(int force) {
     snprintf(line, sizeof line, "Latest:    %s (%.7s)", r.name[0] ? r.name : r.tag, r.sha); uok(line);
     char pending[256], runver[64];
     int st = update_state(cur, &r, pending, sizeof pending);
+    Lock sl;
+    if (custom_system() && read_lock_input(nixdir(), "snapos", &sl)) {
+        /* built by hand: SnapOS updates its packs, the rest is the owner's */
+        if (!same_commit(sl.rev, r.sha) || force) return cmd_update_input(r.sha, &sl, "snapos");
+        st = 0;
+    }
     if (st == 0) {
         char newest[64];
         Lock l;
@@ -1377,15 +1409,6 @@ int main(int argc, char **argv) {
     if (!strcmp(c, "diff")) return cmd_diff();
     if (!strcmp(c, "generations")) return cmd_generations();
     if (!strcmp(c, "log")) return cmd_log();
-    /* on the minimal USB, installing by hand: snapos init, snapos install */
-    if (!strcmp(c, "init") || !strcmp(c, "install")) {
-        char tool[32];
-        snprintf(tool, sizeof tool, "snapos-%s", c);
-        argv[1] = tool;
-        execvp(tool, argv + 1);
-        fprintf(stderr, "snapos: '%s' works on the SnapOS minimal USB, to install SnapOS by hand.\n", c);
-        return 2;
-    }
 
     int is_config  = !strcmp(c, "config");
     int is_rebuild = !strcmp(c, "rebuild");

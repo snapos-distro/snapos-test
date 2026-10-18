@@ -69,6 +69,13 @@
         snapos-minimal-aarch64 = mkSystem "aarch64-linux" [ ./nix/minimal.nix ];
       };
 
+      # The packs, for any NixOS system (see the handbook):
+      #   modules = [ snapos.nixosModules.packs ./configuration.nix ];
+      #   snapos.packs.theme.enable = true;
+      nixosModules.packs = { nixpkgs.overlays = [ snaposOverlay ]; imports = [ ./nix/packs ]; };
+      # The whole SnapOS, as the installer sets it up.
+      nixosModules.default = { nixpkgs.overlays = [ snaposOverlay ]; imports = [ ./nix/modules/snapos.nix ]; };
+
       # `nix build .#iso` builds the image of the machine it runs on.
       packages = forAll (sys:
         let p = mkPkgs sys; a = if sys == "aarch64-linux" then "-aarch64" else ""; in {

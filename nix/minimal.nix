@@ -1,41 +1,33 @@
 { config, pkgs, lib, modulesPath, self, ... }:
 
-# The SnapOS minimal USB: like the NixOS minimal ISO, a terminal and no
-# installer with questions. You install SnapOS by hand, following the
-# handbook (https://snapos-distro.github.io): partition, format, mount,
-# `snapos init`, edit local.nix, `snapos install`.
-let
-  init = pkgs.writeShellScriptBin "snapos-init" (builtins.readFile ./minimal/snapos-init.sh);
-  install = pkgs.writeShellScriptBin "snapos-install" (builtins.readFile ./minimal/snapos-install.sh);
-in
+# The SnapOS minimal USB: the NixOS minimal ISO, a terminal and nothing
+# more. You build your own system by hand, the NixOS way, and add the SnapOS
+# packs you want to it. The handbook (https://snapos-distro.github.io) walks
+# through every step. The SnapOS source is on the USB in /etc/snapos-src, so
+# the packs can be used without downloading them.
 {
   imports = [
     (modulesPath + "/installer/cd-dvd/installation-cd-minimal.nix")
-    ./modules/snapos.nix
+    ./packs
   ];
 
-  services.xserver.enable = lib.mkForce false;
-  services.desktopManager.budgie.enable = lib.mkForce false;
-  services.xserver.displayManager.lightdm.enable = lib.mkForce false;
+  snapos.packs.theme.enable = true;      # Snappy in fastfetch
+  snapos.packs.commands.enable = true;   # snapos find, snapos shell...
   networking.networkmanager.enable = true;
+  nix.settings.experimental-features = [ "nix-command" "flakes" ];
   i18n.supportedLocales = [ "all" ];
 
-  environment.systemPackages = [ init install pkgs.parted pkgs.git pkgs.pciutils ];
+  environment.systemPackages = [ pkgs.parted pkgs.git pkgs.pciutils ];
   environment.etc."snapos-build".text = self.shortRev or self.dirtyShortRev or "unknown";
   environment.etc."snapos-src".source = ../.;
 
   # What you see after it starts: where you are and the first step.
   services.getty.helpLine = lib.mkForce ''
 
-    SnapOS minimal — a terminal, and SnapOS installed by hand.
-    The handbook walks you through it:  https://snapos-distro.github.io
-      1. Connect:     nmtui
-      2. Partition:   lsblk, then parted (handbook, step 2)
-      3. Format:      mkfs.fat / mkfs.ext4 (step 3)
-      4. Mount:       mount ... /mnt (step 4)
-      5. Prepare:     snapos init
-      6. Choose:      nano /mnt/etc/snapos/local.nix
-      7. Install:     snapos install
+    SnapOS minimal: a terminal. Build your system by hand, the NixOS way,
+    and add the SnapOS packs you want. The handbook shows every step:
+        https://snapos-distro.github.io/handbook/
+    Wi-Fi: nmtui      Disks: lsblk      Editor: nano
   '';
 
   boot.kernelParams = [ "console=tty0" ]
