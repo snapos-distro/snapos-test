@@ -135,6 +135,16 @@ rebuild: it is gone, with nothing left behind.
 2. **Flash** it to a USB drive with [balenaEtcher](https://etcher.balena.io).
 3. **Boot** from the USB drive. The installer starts by itself.
 
+**Net install.** With the internet up, the installer downloads the newest
+SnapOS from [snapos-updates](https://github.com/snapos-distro/snapos-updates),
+checks it, and installs it, so an older USB stick still installs the latest
+version. Without the internet it installs the version on the stick. The review
+screen shows which one.
+
+**Building it yourself instead?** The minimal image is a terminal: you write
+your own NixOS system and add the SnapOS packs you want. The
+[handbook](https://snapos-distro.github.io/handbook/) shows every step.
+
 The installer asks eleven things: network, keyboard, language, time zone, disk,
 account, desktop, look (dark or light) and graphics, then shows a review before
 it installs. The Wi-Fi network you choose is kept, so the installed system
@@ -179,7 +189,11 @@ HOSTNAME=snapos
 DESKTOP=budgie
 LOOK=dark
 GRAPHICS=auto
+SOURCE=latest
 ```
+
+`SOURCE=latest` (the default) installs the newest SnapOS when the internet is
+up; `SOURCE=bundled` installs the version on the USB stick.
 
 </details>
 

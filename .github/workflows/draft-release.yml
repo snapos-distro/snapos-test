@@ -33,6 +33,7 @@ jobs:
           base="https://github.com/snapos-distro/snapos-test/releases/download/${{ inputs.from_tag }}"
           for f in snapos-installer.iso snapos-installer.iso.sha256 \
                    snapos-installer-aarch64.iso snapos-installer-aarch64.iso.sha256 \
+                   snapos-minimal.iso snapos-minimal.iso.sha256 snapos-minimal-aarch64.iso snapos-minimal-aarch64.iso.sha256 \
                    snapos-source.tar.gz snapos-source.tar.gz.sha256 snapos-release.txt; do
             curl -fsSL --retry 3 -o "$f" "$base/$f"
           done
@@ -40,7 +41,7 @@ jobs:
 
       - name: The files are whole and were built from this very commit
         run: |
-          sha256sum -c snapos-installer.iso.sha256 snapos-installer-aarch64.iso.sha256 snapos-source.tar.gz.sha256
+          sha256sum -c snapos-installer.iso.sha256 snapos-installer-aarch64.iso.sha256 snapos-minimal.iso.sha256 snapos-minimal-aarch64.iso.sha256 snapos-source.tar.gz.sha256
           commit=$(sed -n 's/^commit=//p' snapos-release.txt)
           echo "built from: $commit"; echo "this commit: $GITHUB_SHA"
           test "$commit" = "$GITHUB_SHA"
@@ -54,4 +55,5 @@ jobs:
             --title "${{ inputs.title }}" --notes-file "$notes" \
             snapos-installer.iso snapos-installer.iso.sha256 \
             snapos-installer-aarch64.iso snapos-installer-aarch64.iso.sha256 \
+            snapos-minimal.iso snapos-minimal.iso.sha256 snapos-minimal-aarch64.iso snapos-minimal-aarch64.iso.sha256 \
             snapos-source.tar.gz snapos-source.tar.gz.sha256 snapos-release.txt

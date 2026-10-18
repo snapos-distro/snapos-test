@@ -644,6 +644,22 @@ check "SnapGuard has the cup, the virus and its animations" bash -c "grep -q 'AN
 check "the minimal USB is a terminal with the packs and the handbook" bash -c "grep -q 'snapos-minimal' '$ROOT/flake.nix' && grep -q 'snapos-distro.github.io' '$ROOT/nix/minimal.nix' && grep -q 'nixosModules.packs' '$ROOT/flake.nix'"
 check "the NixOS tools have SnapOS names and the system lives in /etc/snapos" bash -c "for t in snapos-generate-config snapos-install snapos-enter snapos-rebuild; do grep -q \"\$t\" '$ROOT/nix/pkgs/snapos-nix-tools.nix' || exit 1; done; grep -q 'L /etc/nixos - - - - /etc/snapos' '$ROOT/nix/packs/commands.nix' && grep -q 'etc/snapos/flake.nix' '$ROOT/docs/handbook/flake.nix'"
 check "every pack is off on its own and on in the full SnapOS" bash -c "for p in theme desktops commands snapguard snapweb debian helper updater; do grep -q \"\$p.enable\" '$ROOT/nix/packs/default.nix' || exit 1; done; grep -q 'imports = \[ ../packs \]' '$MODS'"
+# net install: the installer takes the newest SnapOS when it is newer and whole
+NI="$TMP/netinst"; mkdir -p "$NI/usb" "$NI/web/releases/latest/download" "$NI/pkg/snapos"
+echo 2.6 > "$NI/usb/VERSION"; echo 2.7 > "$NI/pkg/snapos/VERSION"
+tar -czf "$NI/web/releases/latest/download/snapos-source.tar.gz" -C "$NI/pkg" snapos
+(cd "$NI/web/releases/latest/download" && sha256sum snapos-source.tar.gz > snapos-source.tar.gz.sha256)
+printf 'commit=abc\nversion=2.7\nname=SnapOS installer V2.7\n' > "$NI/web/releases/latest/download/snapos-release.txt"
+netinst() {
+    { printf 't() { printf "%%s" "$1"; }\nsay() { :; }\nwarn() { :; }\n'
+      sed -n '/^SRC=\/etc\/snapos-src$/,/^}$/p' "$ROOT/nix/installer/snap-install-nixos.sh" | sed "s|/etc/snapos-src|$NI/usb|g"
+      printf 'fetch_latest\nprintf "%%s|%%s" "$(cat "$SRC/VERSION")" "$SRC_LABEL"\n'; } > "$NI/run.sh"
+    env SNAPOS_UPDATE_WEB="file://$NI/web" "$@" bash "$NI/run.sh" 2>/dev/null
+}
+check_eq "net install: the newest SnapOS is installed when it is newer" "2.7|SnapOS 2.7 (src_net)" "$(netinst)"
+check_eq "net install: SOURCE=bundled keeps the version on the stick" "2.6|SnapOS 2.6 (src_usb)" "$(netinst A_SOURCE=bundled)"
+echo junk > "$NI/web/releases/latest/download/snapos-source.tar.gz.sha256"
+check_eq "net install: a download that does not match its checksum is not used" "2.6|SnapOS 2.6 (src_usb)" "$(netinst)"
 check "the installer writes everything to disk before it says it is done" bash -c "awk '/^restart\\(\\)/,/^}/' '$ROOT/nix/installer/snap-install-nixos.sh' | awk '/umount -R \\/mnt/{u=NR} /SNAPOS-INSTALL-OK/{o=NR} END{exit !(u && o && u < o)}'"
 check "builds and tests run in the staging repository only" bash -c "for w in desktop-test build-nixos-iso build-nixos-iso-arm snap-deb; do grep -q \"github.repository == 'snapos-distro/snapos-test'\" '$ROOT/.github/workflows/'\$w.yml || exit 1; done"
 check "the official draft is a copy of a tested build of the same commit" bash -c "grep -q 'test \"\$commit\" = \"\$GITHUB_SHA\"' '$ROOT/.github/workflows/draft-release.yml' && grep -q 'sha256sum -c' '$ROOT/.github/workflows/draft-release.yml' && grep -q -- '--draft' '$ROOT/.github/workflows/draft-release.yml'"
