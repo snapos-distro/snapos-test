@@ -18,6 +18,7 @@
         snapos-tools = final.callPackage ./nix/pkgs/snapos-tools.nix { src = self; };
         snapguard = final.callPackage ./nix/pkgs/snapguard.nix { src = self; };
         snaphelper = final.callPackage ./nix/pkgs/snaphelper.nix { src = self; };
+        snapos-nix-tools = final.callPackage ./nix/pkgs/snapos-nix-tools.nix { };
         nixos-icons = final.callPackage ./nix/pkgs/snapos-icons.nix { };
         fastfetch = final.symlinkJoin {
           name = "fastfetch";

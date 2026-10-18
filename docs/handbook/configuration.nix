@@ -1,4 +1,4 @@
-# /etc/nixos/configuration.nix: your whole system, written by you.
+# /etc/snapos/configuration.nix: your whole system, written by you.
 { config, pkgs, ... }:
 
 {

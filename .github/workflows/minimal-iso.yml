@@ -81,13 +81,13 @@ jobs:
           run("sudo parted -s /dev/vda -- mklabel gpt mkpart ESP fat32 1MiB 512MiB set 1 esp on mkpart root ext4 512MiB 100%")
           run("sudo mkfs.fat -F 32 -n boot /dev/vda1 && sudo mkfs.ext4 -F -L nixos /dev/vda2")
           run("sudo udevadm settle && sudo mount /dev/disk/by-label/nixos /mnt && sudo mkdir -p /mnt/boot && sudo mount -o umask=077 /dev/disk/by-label/boot /mnt/boot")
-          run("sudo nixos-generate-config --root /mnt")
-          run("sudo cp /etc/snapos-src/docs/handbook/flake.nix /etc/snapos-src/docs/handbook/configuration.nix /mnt/etc/nixos/")
+          run("sudo snapos-generate-config --root /mnt && ls -la /mnt/etc/nixos /mnt/etc/snapos")
+          run("sudo cp /etc/snapos-src/docs/handbook/flake.nix /etc/snapos-src/docs/handbook/configuration.nix /mnt/etc/snapos/")
           # only for this test: the packs of this very commit, which is not on GitHub's SnapOS yet
-          run("sudo cp -r /etc/snapos-src /mnt/etc/nixos/snapos && sudo chmod -R u+w /mnt/etc/nixos/snapos && sudo sed -i 's|github:snapos-distro/SnapOS|path:./snapos|' /mnt/etc/nixos/flake.nix")
-          run("sudo sed -i 's|^  system.stateVersion|  boot.kernelParams = [ \"console=ttyS0,115200\" ];\\n  system.stateVersion|' /mnt/etc/nixos/configuration.nix && grep -n 'snapos\\|kernelParams' /mnt/etc/nixos/*.nix")
-          run("sudo nixos-install --flake /mnt/etc/nixos#mypc --no-root-passwd", timeout=7200)
-          run("echo ana:snapos | sudo nixos-enter --root /mnt -c chpasswd")
+          run("sudo cp -r /etc/snapos-src /mnt/etc/snapos/snapos && sudo chmod -R u+w /mnt/etc/snapos/snapos && sudo sed -i 's|github:snapos-distro/SnapOS|path:./snapos|' /mnt/etc/snapos/flake.nix")
+          run("sudo sed -i 's|^  system.stateVersion|  boot.kernelParams = [ \"console=ttyS0,115200\" ];\\n  system.stateVersion|' /mnt/etc/snapos/configuration.nix && grep -n 'snapos\\|kernelParams' /mnt/etc/snapos/*.nix")
+          run("sudo snapos-install --flake /mnt/etc/snapos#mypc --no-root-passwd", timeout=7200)
+          run("echo ana:snapos | sudo snapos-enter --root /mnt -c chpasswd")
           run("sudo umount -R /mnt && sync")
           print("installed", flush=True)
           PY
@@ -116,7 +116,7 @@ jobs:
           read_until("mypc login:", 900); print("login prompt", flush=True)
           time.sleep(3); s.sendall(b"ana\n"); read_until("assword:", 60); s.sendall(b"snapos\n")
           time.sleep(8)
-          for n, cmd in enumerate(["snapos version", "snapos list", "snapguard status; true", "snap-deb status; true", "cat /etc/snapos/appearance", "systemctl is-enabled snapos-update-guard", "snapos list | grep -q firefox"]):
+          for n, cmd in enumerate(["snapos version", "snapos list", "snapguard status; true", "snap-deb status; true", "cat /etc/snapos/appearance", "test -L /etc/nixos && ls /etc/snapos/flake.nix", "systemctl is-enabled snapos-update-guard", "snapos list | grep -q firefox"]):
               s.sendall(('%s; echo @@C""%d=$?\n' % (cmd, n)).encode())
               out = read_until("@@C%d=" % n, 120); rc = read_until("\n", 10).strip()
               print("$ " + cmd + "  -> exit " + rc + "\n" + out[-600:], flush=True)

@@ -17,7 +17,7 @@
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
   i18n.supportedLocales = [ "all" ];
 
-  environment.systemPackages = [ pkgs.parted pkgs.git pkgs.pciutils ];
+  environment.systemPackages = [ pkgs.parted pkgs.git pkgs.pciutils pkgs.snapos-nix-tools ];
   environment.etc."snapos-build".text = self.shortRev or self.dirtyShortRev or "unknown";
   environment.etc."snapos-src".source = ../.;
 

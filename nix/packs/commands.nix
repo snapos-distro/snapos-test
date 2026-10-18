@@ -5,7 +5,9 @@
 with lib;
 {
   config = mkIf config.snapos.packs.commands.enable {
-    environment.systemPackages = [ pkgs.snapos-tools pkgs.git ];
+    environment.systemPackages = [ pkgs.snapos-tools pkgs.snapos-nix-tools pkgs.git ];
+    # the system lives in /etc/snapos; NixOS finds it through /etc/nixos
+    systemd.tmpfiles.rules = [ "L /etc/nixos - - - - /etc/snapos" ];
     nix.settings.experimental-features = [ "nix-command" "flakes" ];
 
     # `nix-env -i` looks like apt, but what it installs is not in the system
