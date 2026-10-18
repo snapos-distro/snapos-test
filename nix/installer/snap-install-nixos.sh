@@ -457,11 +457,15 @@ fetch_latest() {
     [ -n "$latest" ] && [ "$latest" != "$mine" ] || return 0
     [ "$(printf '%s\n%s\n' "$mine" "$latest" | sort -V | tail -1)" = "$latest" ] || return 0
     say "$(t src_get "$latest")"
-    curl -fsSL -m 600 -o "$d/snapos-source.tar.gz" "$web/releases/latest/download/snapos-source.tar.gz" 2>/dev/null &&
-        curl -fsSL -m 60 -o "$d/snapos-source.tar.gz.sha256" "$web/releases/latest/download/snapos-source.tar.gz.sha256" 2>/dev/null &&
-        (cd "$d" && sha256sum -c --status snapos-source.tar.gz.sha256) || { warn "$(t src_bad)"; return 0; }
-    mkdir -p "$d/src" && tar -xzf "$d/snapos-source.tar.gz" -C "$d/src" --strip-components=1 && [ -e "$d/src/VERSION" ] ||
-        { warn "$(t src_bad)"; return 0; }
+    if ! curl -fsSL -m 600 -o "$d/snapos-source.tar.gz" "$web/releases/latest/download/snapos-source.tar.gz" 2>/dev/null ||
+       ! curl -fsSL -m 60 -o "$d/snapos-source.tar.gz.sha256" "$web/releases/latest/download/snapos-source.tar.gz.sha256" 2>/dev/null ||
+       ! (cd "$d" && sha256sum -c --status snapos-source.tar.gz.sha256); then
+        warn "$(t src_bad)"; return 0
+    fi
+    mkdir -p "$d/src"
+    if ! tar -xzf "$d/snapos-source.tar.gz" -C "$d/src" --strip-components=1 || [ ! -e "$d/src/VERSION" ]; then
+        warn "$(t src_bad)"; return 0
+    fi
     SRC="$d/src"
     SRC_RELEASE="$d/release.txt"
     SRC_LABEL="SnapOS $latest ($(t src_net))"
