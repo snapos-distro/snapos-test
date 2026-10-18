@@ -372,7 +372,7 @@ static gboolean on_draw(GtkWidget *w, cairo_t *cr, gpointer data) {
     double dy = 0;
     if (app.mood == MOOD_SCAN) dy = (app.tick % 6 < 3) ? 0 : 2;
     if (app.mood == MOOD_CHOMP) dy = (app.tick & 1) ? 0 : -3;
-    unsigned f = app.anim_f;
+    int f = (int)app.anim_f;          /* signed: the timelines subtract from it */
     double hy = CUP_Y - CUP_H * 0.45;
 
     if (app.anim == ANIM_ARRIVE) {
