@@ -91,7 +91,7 @@ jobs:
           run("sudo umount -R /mnt && sync")
           print("installed", flush=True)
           PY
-          kill $qemu; wait $qemu 2>/dev/null || true
+          pkill -f 'qemu-system-x86_64.*disk.qcow2' || true; while pgrep -f 'qemu-system-x86_64.*disk.qcow2' >/dev/null; do sleep 1; done
           echo "== booting the installed system and using the packs"
           q qemu-system-x86_64 -enable-kvm -m 4096 -smp 2 -bios "$fw" -drive file=disk.qcow2,if=virtio \
             -nic user,model=virtio-net-pci -display none -serial unix:serial2.sock,server,nowait -monitor unix:mon2.sock,server,nowait &
@@ -122,7 +122,7 @@ jobs:
               print("$ " + cmd + "  -> exit " + rc + "\n" + out[-600:], flush=True)
               if rc != "0": raise SystemExit("failed: " + cmd)
           PY
-          kill $qemu 2>/dev/null; wait $qemu 2>/dev/null || true
+          pkill -f 'qemu-system-x86_64.*disk.qcow2' || true; while pgrep -f 'qemu-system-x86_64.*disk.qcow2' >/dev/null; do sleep 1; done
       - name: Keep the logs
         if: always()
         uses: actions/upload-artifact@v4
