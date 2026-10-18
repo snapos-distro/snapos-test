@@ -13,7 +13,9 @@
   <a href="#install">Install</a> ·
   <a href="#coming-from-a-debian-based-distro">Coming from a Debian-based distro</a> ·
   <a href="#every-command">Commands</a> ·
-  <a href="#learning-nixos-from-here">Learn NixOS</a>
+  <a href="#learning-nixos-from-here">Learn NixOS</a> ·
+  <a href="https://snapos-distro.github.io">Website</a> ·
+  <a href="https://snapos-distro.github.io/handbook/">Handbook</a>
 </p>
 
 <br>
