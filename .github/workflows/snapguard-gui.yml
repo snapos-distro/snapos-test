@@ -8,7 +8,7 @@ name: SnapGuard window
 on:
   workflow_dispatch:
   push:
-    branches: [ main, snapguard-anim ]
+    branches: [ main ]
     paths: [ "src/snapguard-gui.c", "src/snapguard.c", ".github/workflows/snapguard-gui.yml" ]
 
 permissions:
