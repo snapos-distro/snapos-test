@@ -116,7 +116,7 @@ jobs:
           read_until("mypc login:", 900); print("login prompt", flush=True)
           time.sleep(3); s.sendall(b"ana\n"); read_until("assword:", 60); s.sendall(b"snapos\n")
           time.sleep(8)
-          for n, cmd in enumerate(["snapos version", "snapos list", "snapguard status; true", "snap-deb status; true", "cat /etc/snapos/appearance", "systemctl is-enabled snapos-update-guard"]):
+          for n, cmd in enumerate(["snapos version", "snapos list", "snapguard status; true", "snap-deb status; true", "cat /etc/snapos/appearance", "systemctl is-enabled snapos-update-guard", "snapos list | grep -q firefox"]):
               s.sendall(('%s; echo @@C""%d=$?\n' % (cmd, n)).encode())
               out = read_until("@@C%d=" % n, 120); rc = read_until("\n", 10).strip()
               print("$ " + cmd + "  -> exit " + rc + "\n" + out[-600:], flush=True)

@@ -301,9 +301,14 @@ static int cmd_rebuild(int argc, char **argv) {
 
 #define NIX_FLAGS "--extra-experimental-features", "nix-command flakes"
 
-/* The system's own package set: the same versions the system is built from. */
+/* The system's own package set: the same versions the system is built from.
+ * A system built by hand uses its nixpkgs input, which NixOS puts in the
+ * registry as "nixpkgs". */
 static void pkg_ref(char *dst, size_t n, const char *name) {
-    if (name) snprintf(dst, n, "path:%s#%s", nixdir(), name);
+    if (custom_system()) {
+        if (name) snprintf(dst, n, "nixpkgs#%s", name);
+        else snprintf(dst, n, "nixpkgs");
+    } else if (name) snprintf(dst, n, "path:%s#%s", nixdir(), name);
     else snprintf(dst, n, "path:%s", nixdir());
 }
 
@@ -442,7 +447,9 @@ static int cmd_add_remove(int add, int argc, char **argv) {
     if (add) {
         for (int i = 2; i < argc; i++) {
             char ref[PATH_MAX + 160];
-            snprintf(ref, sizeof ref, "path:%s#%s.name", nixdir(), argv[i]);
+            char nm[400];
+            snprintf(nm, sizeof nm, "%.380s.name", argv[i]);
+            pkg_ref(ref, sizeof ref, nm);
             char *flags[] = { NIX_FLAGS };
             char *ev[] = { "nix", flags[0], flags[1], "eval", "--raw", ref, NULL };
             if (strchr(argv[i], '#') || run_quiet(ev) != 0) {

@@ -27,8 +27,14 @@
   services.xserver.displayManager.lightdm.enable = true;
   services.xserver.xkb.layout = "br";
 
-  # Programs
-  environment.systemPackages = with pkgs; [ firefox git nano ];
+  # Programs (snapos add and snapos remove edit this list for you)
+  # snapos:packages:begin
+  environment.systemPackages = with pkgs; [
+    firefox
+    git
+    nano
+  ];
+  # snapos:packages:end
 
   # The SnapOS packs you want
   snapos.packs.theme.enable = true;      # the red look and Snappy
