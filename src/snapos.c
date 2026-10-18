@@ -91,6 +91,10 @@ static void usage(FILE *out) {
         "                           12: packages)\n"
         "  snapos version           the release this system runs\n"
         "\n"
+        "Installing by hand (on the minimal USB)\n"
+        "  snapos init [/mnt]       prepare SnapOS on the mounted disk\n"
+        "  snapos install [/mnt]    install it, then set the passwords\n"
+        "\n"
         "Coming from a Debian-based distro\n"
         "  apt search X       ->  snapos find X\n"
         "  apt install X      ->  snapos add X\n"
@@ -1373,6 +1377,15 @@ int main(int argc, char **argv) {
     if (!strcmp(c, "diff")) return cmd_diff();
     if (!strcmp(c, "generations")) return cmd_generations();
     if (!strcmp(c, "log")) return cmd_log();
+    /* on the minimal USB, installing by hand: snapos init, snapos install */
+    if (!strcmp(c, "init") || !strcmp(c, "install")) {
+        char tool[32];
+        snprintf(tool, sizeof tool, "snapos-%s", c);
+        argv[1] = tool;
+        execvp(tool, argv + 1);
+        fprintf(stderr, "snapos: '%s' works on the SnapOS minimal USB, to install SnapOS by hand.\n", c);
+        return 2;
+    }
 
     int is_config  = !strcmp(c, "config");
     int is_rebuild = !strcmp(c, "rebuild");
