@@ -508,9 +508,10 @@ snap-deb status                 # the layer: Debian version, packages, tools
   service (a VPN, Docker, a driver) is installed, but its service does not
   start inside the layer; SnapOS tells you so. For those, `snapos find` usually
   has the native version.
-- **It is not a sandbox.** The layer is native: a program in it can do what it
-  could do on Debian. The protection is SnapGuard, which scans every `.deb`
-  before it is installed.
+- **No sandbox, on purpose.** `.deb` programs run natively in the layer, like
+  on a real Debian computer, which is why Steam just works. Install the `.deb`
+  files you would trust on Debian or Ubuntu. SnapGuard scans every package
+  before it is installed, as an extra check, not as a wall around it.
 - On an ARM64 computer the layer takes `arm64` packages. On a PC it takes
   64-bit and 32-bit packages, so programs like **Steam** work: its libraries
   are installed together with it.
