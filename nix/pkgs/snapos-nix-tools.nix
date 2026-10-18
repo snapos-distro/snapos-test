@@ -22,7 +22,21 @@ let
     echo "SnapOS: your system files are in $root/etc/snapos"
   '';
   install = writeShellScriptBin "snapos-install" ''
-    # snapos-install --flake /mnt/etc/snapos#NAME: nixos-install
+    # snapos-install --flake /mnt/etc/snapos#NAME: nixos-install. The lock file
+    # is written first: nixos-install would write it mid-way and then find the
+    # folder changed.
+    flake=
+    prev=
+    for a in "$@"; do
+      [ "$prev" = --flake ] && flake=$a
+      case "$a" in --flake=*) flake=''${a#--flake=} ;; esac
+      prev=$a
+    done
+    dir=''${flake%%#*}
+    dir=''${dir#path:}
+    if [ -n "$dir" ] && [ -f "$dir/flake.nix" ] && [ ! -f "$dir/flake.lock" ]; then
+      nix --extra-experimental-features "nix-command flakes" flake lock "path:$dir"
+    fi
     exec nixos-install "$@"
   '';
   enter = writeShellScriptBin "snapos-enter" ''

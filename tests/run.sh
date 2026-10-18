@@ -643,6 +643,7 @@ section "releases"
 check "SnapGuard has the cup, the virus and its animations" bash -c "grep -q 'ANIM_ARRIVE' '$ROOT/src/snapguard-gui.c' && grep -q 'ANIM_EAT' '$ROOT/src/snapguard-gui.c' && grep -q 'ANIM_TRUST' '$ROOT/src/snapguard-gui.c' && grep -q 'VIRUS_ART' '$ROOT/src/snapguard-gui.c'"
 check "the minimal USB is a terminal with the packs and the handbook" bash -c "grep -q 'snapos-minimal' '$ROOT/flake.nix' && grep -q 'snapos-distro.github.io' '$ROOT/nix/minimal.nix' && grep -q 'nixosModules.packs' '$ROOT/flake.nix'"
 check "the NixOS tools have SnapOS names and the system lives in /etc/snapos" bash -c "for t in snapos-generate-config snapos-install snapos-enter snapos-rebuild; do grep -q \"\$t\" '$ROOT/nix/pkgs/snapos-nix-tools.nix' || exit 1; done; grep -q 'L /etc/nixos - - - - /etc/snapos' '$ROOT/nix/packs/commands.nix' && grep -q 'etc/snapos/flake.nix' '$ROOT/docs/handbook/flake.nix'"
+check "snapos-install writes the lock file before nixos-install" bash -c "grep -q 'flake lock \"path:\$dir\"' '$ROOT/nix/pkgs/snapos-nix-tools.nix'"
 check "every pack is off on its own and on in the full SnapOS" bash -c "for p in theme desktops commands snapguard snapweb debian helper updater; do grep -q \"\$p.enable\" '$ROOT/nix/packs/default.nix' || exit 1; done; grep -q 'imports = \[ ../packs \]' '$MODS'"
 # net install: the installer takes the newest SnapOS when it is newer and whole
 NI="$TMP/netinst"; mkdir -p "$NI/usb" "$NI/web/releases/latest/download" "$NI/pkg/snapos"
