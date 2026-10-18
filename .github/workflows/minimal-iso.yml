@@ -80,7 +80,7 @@ jobs:
           run("lsblk")
           run("sudo parted -s /dev/vda -- mklabel gpt mkpart ESP fat32 1MiB 512MiB set 1 esp on mkpart root ext4 512MiB 100%")
           run("sudo mkfs.fat -F 32 -n boot /dev/vda1 && sudo mkfs.ext4 -F -L nixos /dev/vda2")
-          run("sudo udevadm settle && sudo mount /dev/disk/by-label/nixos /mnt && sudo mkdir -p /mnt/boot && sudo mount -o umask=077 /dev/disk/by-label/boot /mnt/boot")
+          run("sudo mount /dev/vda2 /mnt && sudo mkdir -p /mnt/boot && sudo mount -o umask=077 /dev/vda1 /mnt/boot")
           run("sudo snapos-generate-config --root /mnt && ls -la /mnt/etc/nixos /mnt/etc/snapos")
           run("sudo cp /etc/snapos-src/docs/handbook/flake.nix /etc/snapos-src/docs/handbook/configuration.nix /mnt/etc/snapos/")
           # only for this test: the packs of this very commit, which is not on GitHub's SnapOS yet

@@ -28,14 +28,16 @@ with lib;
     };
 
     # At every login, snapupdate looks for a newer release and offers it.
-    environment.etc."xdg/autostart/snapupdate.desktop".text = mkIf config.services.xserver.enable ''
-      [Desktop Entry]
-      Type=Application
-      Name=SnapOS Update
-      Exec=snapupdate --autostart
-      Terminal=false
-      X-GNOME-Autostart-enabled=true
-    '';
+    environment.etc = mkIf config.services.xserver.enable {
+      "xdg/autostart/snapupdate.desktop".text = ''
+        [Desktop Entry]
+        Type=Application
+        Name=SnapOS Update
+        Exec=snapupdate --autostart
+        Terminal=false
+        X-GNOME-Autostart-enabled=true
+      '';
+    };
     systemd.tmpfiles.rules = [
       "d /var/lib/snapos/update 0755 root root -"
       "d /var/lib/snapos/update/work 0700 root root -"
