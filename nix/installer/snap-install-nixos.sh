@@ -769,6 +769,8 @@ show_parts() {
 # asks for one partition (answer key, text, example), refusing ones already used
 pick_part() {
     local key="$1" text="$2" example="$3" optional="${4:-0}" name
+    # without questions, an optional partition that was not given is skipped
+    if [ "$UNATTENDED" = 1 ] && [ -z "$key" ] && [ "$optional" = 1 ]; then PICKED=""; return 0; fi
     while :; do
         if [ -n "$key" ]; then name="$key"; key=""; printf '  %s%s\n' "$(t "$text" "$example")" "$name"
         else printf '  %s' "$(t "$text" "$example")"; read -r name; fi

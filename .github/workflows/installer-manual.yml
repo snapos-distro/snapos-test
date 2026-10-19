@@ -55,11 +55,28 @@ jobs:
           cp /usr/share/OVMF/OVMF_VARS_4M.fd vars.fd
           iso=$(ls result/iso/*.iso | head -1)
           sudo chmod 666 /dev/kvm
-          timeout 100m qemu-system-x86_64 -enable-kvm -cpu host -smp 4 -m 4096 \
+          qemu-system-x86_64 -enable-kvm -cpu host -smp 4 -m 4096 \
             -drive if=pflash,format=raw,readonly=on,file=/usr/share/OVMF/OVMF_CODE_4M.fd -drive if=pflash,format=raw,file=vars.fd \
             -drive file=disk.raw,if=virtio,format=raw -cdrom "$iso" -boot d \
             -device qemu-xhci -drive file=answers.iso,if=none,id=answers,format=raw,readonly=on -device usb-storage,drive=answers \
-            -nic user,model=virtio-net-pci -display none -no-reboot -serial file:install.log
+            -nic user,model=virtio-net-pci -display none -no-reboot -serial file:install.log -qmp unix:qmp.sock,server,nowait &
+          qemu=$!
+          mkdir -p shots
+          # a picture of the screen every 2 minutes, so a stuck install shows where it stopped
+          shot() { python3 - "$1" <<'PY'
+          import json, socket, sys
+          s = socket.socket(socket.AF_UNIX); s.connect("qmp.sock"); f = s.makefile("rw")
+          f.readline()
+          for c in ({"execute": "qmp_capabilities"}, {"execute": "screendump", "arguments": {"filename": sys.argv[1]}}):
+              f.write(json.dumps(c) + "\n"); f.flush(); f.readline()
+          PY
+          }
+          for i in $(seq -w 1 45); do
+            sleep 120
+            kill -0 $qemu 2>/dev/null || break
+            shot "$PWD/shots/install-$i.ppm" || true
+          done
+          if kill -0 $qemu 2>/dev/null; then kill $qemu; echo "the install did not finish in 90 minutes"; exit 1; fi
           echo "the installer finished and the VM restarted"
       - name: The other partitions are as they were
         run: |
@@ -86,3 +103,4 @@ jobs:
           path: |
             install.log
             boot.log
+            shots

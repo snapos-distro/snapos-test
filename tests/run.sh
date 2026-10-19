@@ -665,7 +665,7 @@ check "the installer can keep the other partitions" bash -c "grep -q 'choose_par
 check "by hand, the EFI partition is shared at /boot/efi and GRUB lists the other systems" bash -c "grep -q 'efiSysMountPoint = \\\\\"/boot/efi' '$ROOT/nix/installer/snap-install-nixos.sh' && grep -q 'useOSProber = true' '$ROOT/nix/installer/snap-install-nixos.sh'"
 sed -n '/only what was chosen is erased/,/^else$/p' "$ROOT/nix/installer/snap-install-nixos.sh" > "$TMP/manual-block.sh"
 check "by hand, only the chosen partition is formatted, never the disk" bash -c "grep -q 'mkfs.ext4 -F -L nixos' '$TMP/manual-block.sh' && ! grep -qE 'sfdisk|parted|wipefs -a \"\\\$TARGET\"' '$TMP/manual-block.sh'"
-check "every nixpkgs package can be installed, unfree ones too" bash -c "grep -q 'nixpkgs.config.allowUnfree = true' '$ROOT/nix/packs/store.nix' && grep -q 'config.allowUnfree = true' '$ROOT/flake.nix'"
+check "every nixpkgs package can be installed, unfree ones too" bash -c "grep -q 'allowUnfree = true; }' '$ROOT/nix/packs/store.nix' && grep -q 'config.allowUnfree = true' '$ROOT/flake.nix'"
 check "Steam is on Carapace's first page" grep -q '^steam	Steam	' "$ROOT/branding/carapace/apps.tsv"
 check "Carapace's first page only keeps what runs on the computer" bash -c "grep -q 'lib.meta.availableOn stdenv.hostPlatform' '$ROOT/nix/pkgs/carapace.nix'"
 # net install: the installer takes the newest SnapOS when it is newer and whole
