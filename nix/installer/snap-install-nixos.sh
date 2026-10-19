@@ -328,7 +328,11 @@ FLAKE_ATTR=snapos
 # installed system on the serial line (the CI test reads it there).
 UNATTENDED=0
 load_answers() {
-    local dev=/dev/disk/by-label/SNAPOS_ANSWERS d f line k v
+    local dev=/dev/disk/by-label/SNAPOS_ANSWERS d f line k v i
+    # a USB stick can show up a few seconds after the installer starts
+    # (UEFI machines are slower at it): wait for it a little
+    udevadm settle --timeout=10 2>/dev/null
+    for i in 1 2 3 4 5 6 7 8; do [ -e "$dev" ] && break; sleep 1; done
     [ -e "$dev" ] || return 0
     d="$(mktemp -d)"
     mount -o ro "$dev" "$d" 2>/dev/null || { rmdir "$d"; return 0; }
