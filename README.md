@@ -24,7 +24,7 @@
 
 > [!IMPORTANT]
 > **Despite the name, SnapOS does not use Snap!** No Snap packages and no snapd. The name comes from the
-> alligator snapping turtle, our mascot Snappy. Programs come from Nix, with Flatpak and `.deb` files if you want them.
+> alligator snapping turtle, our mascot Snappy. Programs come from Nix (the Carapace store), with `.deb` files and Flatpak if you want them.
 
 > [!NOTE]
 > **This is the staging repository for SnapOS.** New features and fixes are developed and tested here first. When an update is verified it is carried over to [SnapOS](https://github.com/snapos-distro/SnapOS), the repository that ships the installer ISO.
@@ -109,9 +109,9 @@ rebuild: it is gone, with nothing left behind.
 | **SnapGuard** | a defender based on ClamAV, in real time; nothing is deleted without your approval |
 | **SnapWeb** | the browser: official Firefox with a dark and red look |
 | **`.deb` support** | open a `.deb` and SnapOS scans it, then installs it in a real Debian layer |
-| **Software** | GNOME Software with Flatpak and Flathub |
+| **Carapace** | the store: every program in Nix, installed with a click and undone like any change |
 | **Four desktops** | Budgie, KDE Plasma, Xfce or Hyprland, each in dark or light |
-| **A guided installer** | eleven steps, in English or Portuguese, for x86_64 and ARM64 |
+| **A guided installer** | eleven steps, in English or Portuguese, for x86_64 and ARM64; it can keep your other partitions for dual boot |
 | **SnapHelper** | a short tour that opens the first time you log in |
 
 <br>
@@ -341,7 +341,8 @@ would.
 
 **Other places to get programs**
 
-- **Software**: GNOME Software with Flatpak and Flathub.
+- **Carapace**: the store. It shows every program in Nix (Steam and other unfree ones too), and installing is `snapos add` with a progress window.
+- **Flatpak**: off by default; turn on `snapos.packs.flatpak.enable = true;` for a program only Flathub has.
 - **A `.deb` file**: see [Debian packages](#debian-packages-deb).
 
 <details>
