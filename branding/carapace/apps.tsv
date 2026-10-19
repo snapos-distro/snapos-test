@@ -1,31 +1,37 @@
 # The programs on Carapace's first page: Nix package, name, icon, category, what it does.
 # Every other package is found by the search.
 firefox	Firefox	firefox	Internet	Fast, private web browser
+google-chrome	Google Chrome	google-chrome	Internet	Google's web browser
 chromium	Chromium	chromium	Internet	The open source base of Chrome
-thunderbird	Thunderbird	thunderbird	Internet	E-mail, calendar and contacts
+discord	Discord	discord	Internet	Talk with your friends
 telegram-desktop	Telegram	telegram	Internet	Fast and simple chat
+thunderbird	Thunderbird	thunderbird	Internet	E-mail, calendar and contacts
 element-desktop	Element	element	Internet	Secure chat on Matrix
 qbittorrent	qBittorrent	qbittorrent	Internet	Download torrents
-gimp	GIMP	gimp	Graphics	Edit photos and images
-inkscape	Inkscape	inkscape	Graphics	Vector drawing
-krita	Krita	krita	Graphics	Digital painting
-blender	Blender	blender	Graphics	3D creation for everyone
-darktable	darktable	darktable	Graphics	Develop your camera's photos
-vlc	VLC	vlc	Audio & Video	Plays every video and song
-mpv	mpv	mpv	Audio & Video	A light video player
-obs-studio	OBS Studio	com.obsproject.Studio	Audio & Video	Record and stream your screen
-audacity	Audacity	audacity	Audio & Video	Record and edit audio
-kdePackages.kdenlive	Kdenlive	kdenlive	Audio & Video	Edit videos
-libreoffice	LibreOffice	libreoffice-main	Office	Documents, sheets and slides
-xournalpp	Xournal++	com.github.xournalpp.xournalpp	Office	Write and draw on PDFs
-keepassxc	KeePassXC	keepassxc	Office	Keep your passwords safe
-vscodium	VSCodium	vscodium	Development	Code editor
-godot_4	Godot	godot	Development	Make your own games
-kicad	KiCad	kicad	Development	Design circuit boards
-wireshark	Wireshark	wireshark	Development	Look inside your network
+steam	Steam	steam	Games	Thousands of games
 supertuxkart	SuperTuxKart	supertuxkart	Games	Kart racing with Tux
 luanti	Luanti	luanti	Games	Build worlds, block by block
 zeroad	0 A.D.	0ad	Games	Build an ancient empire
 lutris	Lutris	lutris	Games	All your games in one place
+gimp	GIMP	gimp	Graphics	Edit photos and images
+krita	Krita	krita	Graphics	Digital painting
+inkscape	Inkscape	inkscape	Graphics	Vector drawing
+blender	Blender	blender	Graphics	3D creation for everyone
+darktable	darktable	darktable	Graphics	Develop your camera's photos
+vlc	VLC	vlc	Audio & Video	Plays every video and song
+spotify	Spotify	spotify	Audio & Video	Music and podcasts
+obs-studio	OBS Studio	com.obsproject.Studio	Audio & Video	Record and stream your screen
+mpv	mpv	mpv	Audio & Video	A light video player
+audacity	Audacity	audacity	Audio & Video	Record and edit audio
+kdePackages.kdenlive	Kdenlive	kdenlive	Audio & Video	Edit videos
+libreoffice	LibreOffice	libreoffice-main	Office	Documents, sheets and slides
+obsidian	Obsidian	obsidian	Office	Notes that link to each other
+xournalpp	Xournal++	com.github.xournalpp.xournalpp	Office	Write and draw on PDFs
+keepassxc	KeePassXC	keepassxc	Office	Keep your passwords safe
+vscode	Visual Studio Code	visual-studio-code	Development	Microsoft's code editor
+vscodium	VSCodium	vscodium	Development	Code editor
+godot_4	Godot	godot	Development	Make your own games
+kicad	KiCad	kicad	Development	Design circuit boards
+wireshark	Wireshark	wireshark	Development	Look inside your network
 gparted	GParted	gparted	Utilities	Partition your disks
 btop	btop	btop	Utilities	See what your computer is doing

@@ -661,6 +661,8 @@ check "Carapace installs with snapos add through pkexec" bash -c "grep -q '\"pke
 check "every program on Carapace's first page has five fields" bash -c "grep -v '^#' '$ROOT/branding/carapace/apps.tsv' | awk -F'\t' 'NF != 5 { exit 1 }'"
 check "Carapace has Snappy's six scenes" bash -c "for s in flowers mountain swimming campfire fishing kite; do [ -s '$ROOT/branding/carapace/scenes/'\$s.gif ] || exit 1; done"
 check "Hyprland has a password window for Carapace" grep -q 'hyprpolkitagent' "$ROOT/nix/modules/desktop.nix"
+check "every nixpkgs package can be installed, unfree ones too" bash -c "grep -q 'nixpkgs.config.allowUnfree = true' '$ROOT/nix/packs/store.nix' && grep -q 'config.allowUnfree = true' '$ROOT/flake.nix'"
+check "Steam is on Carapace's first page" grep -q '^steam	Steam	' "$ROOT/branding/carapace/apps.tsv"
 # net install: the installer takes the newest SnapOS when it is newer and whole
 NI="$TMP/netinst"; mkdir -p "$NI/usb" "$NI/web/releases/latest/download" "$NI/pkg/snapos"
 echo 2.6 > "$NI/usb/VERSION"; echo 2.7 > "$NI/pkg/snapos/VERSION"
