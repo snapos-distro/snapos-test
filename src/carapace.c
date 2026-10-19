@@ -111,11 +111,26 @@ static App *find_app(const char *attr) {
 
 /* ---- small pieces --------------------------------------------------------- */
 
-static GtkWidget *icon(const char *name, int px) {
+/* The desktop's icon theme first; Papirus (SnapOS's icons) when it does not
+ * have the program, as on Plasma, whose GTK theme is Breeze. */
+static void set_icon(GtkImage *im, const char *name, int px) {
+    static GtkIconTheme *papirus;
     GtkIconTheme *t = gtk_icon_theme_get_default();
-    const char *use = name && gtk_icon_theme_has_icon(t, name) ? name : "application-x-executable";
-    GtkWidget *im = gtk_image_new_from_icon_name(use, GTK_ICON_SIZE_DIALOG);
-    gtk_image_set_pixel_size(GTK_IMAGE(im), px);
+    if (name && gtk_icon_theme_has_icon(t, name)) {
+        gtk_image_set_from_icon_name(im, name, GTK_ICON_SIZE_DIALOG);
+        gtk_image_set_pixel_size(im, px);
+        return;
+    }
+    if (!papirus) { papirus = gtk_icon_theme_new(); gtk_icon_theme_set_custom_theme(papirus, "Papirus-Dark"); }
+    GdkPixbuf *pb = name ? gtk_icon_theme_load_icon(papirus, name, px, GTK_ICON_LOOKUP_FORCE_SIZE, NULL) : NULL;
+    if (pb) { gtk_image_set_from_pixbuf(im, pb); g_object_unref(pb); return; }
+    gtk_image_set_from_icon_name(im, "application-x-executable", GTK_ICON_SIZE_DIALOG);
+    gtk_image_set_pixel_size(im, px);
+}
+
+static GtkWidget *icon(const char *name, int px) {
+    GtkWidget *im = gtk_image_new();
+    set_icon(GTK_IMAGE(im), name, px);
     return im;
 }
 
@@ -194,9 +209,7 @@ static void on_page_button(GtkButton *b, gpointer data) {
 
 static void show_app(App *a) {
     ui.shown = a;
-    GtkIconTheme *t = gtk_icon_theme_get_default();
-    gtk_image_set_from_icon_name(GTK_IMAGE(ui.page_icon), gtk_icon_theme_has_icon(t, a->icon) ? a->icon : "application-x-executable", GTK_ICON_SIZE_DIALOG);
-    gtk_image_set_pixel_size(GTK_IMAGE(ui.page_icon), 96);
+    set_icon(GTK_IMAGE(ui.page_icon), a->icon, 96);
     gtk_label_set_text(GTK_LABEL(ui.page_name), a->name);
     gtk_label_set_text(GTK_LABEL(ui.page_summary), a->summary);
     char *attr = g_strdup_printf("Nix package: %s", a->attr);
@@ -259,6 +272,23 @@ static char *strip_ansi(const char *s) {
     return g_string_free(o, FALSE);
 }
 
+/* lower is better: a program from the first page, then the name itself,
+ * then names that start with it or have it, then the rest */
+static int relevance(const char *attr, const char *q) {
+    const char *base = strrchr(attr, '.') ? strrchr(attr, '.') + 1 : attr;
+    if (find_app(attr)) return 0;
+    if (!g_ascii_strcasecmp(base, q)) return 1;
+    if (!g_ascii_strncasecmp(base, q, strlen(q))) return 2;
+    if (strstr(base, q)) return 3;
+    return 4;
+}
+
+static gint by_relevance(gconstpointer a, gconstpointer b, gpointer q) {
+    char **x = *(char ***)a, **y = *(char ***)b;
+    int d = relevance(x[0], q) - relevance(y[0], q);
+    return d ? d : g_ascii_strcasecmp(x[0], y[0]);
+}
+
 static void on_found(GObject *src, GAsyncResult *res, gpointer data) {
     (void)data;
     char *out = NULL;
@@ -269,6 +299,8 @@ static void on_found(GObject *src, GAsyncResult *res, gpointer data) {
     gtk_spinner_stop(GTK_SPINNER(ui.spinner));
     gtk_widget_hide(ui.spinner);
     int found = 0;
+    const char *q = gtk_entry_get_text(GTK_ENTRY(ui.search));
+    GPtrArray *hits = g_ptr_array_new_with_free_func((GDestroyNotify)g_strfreev);
     if (out) {
         char **lines = g_strsplit(out, "\n", -1);
         for (int i = 0; lines[i]; i++) {
@@ -282,7 +314,8 @@ static void on_found(GObject *src, GAsyncResult *res, gpointer data) {
                     char *rest = sys ? strchr(sys + 1, '.') : NULL;
                     if (rest) attr = rest + 1;
                 }
-                add_result(attr, ver, g_strstrip(summary));
+                char *f[] = { attr, ver ? ver : "", g_strstrip(summary), NULL };
+                g_ptr_array_add(hits, g_strdupv(f));
                 found++;
                 g_free(summary);
             }
@@ -290,6 +323,12 @@ static void on_found(GObject *src, GAsyncResult *res, gpointer data) {
         }
         g_strfreev(lines);
     }
+    g_ptr_array_sort_with_data(hits, by_relevance, (gpointer)q);
+    for (guint i = 0; i < hits->len && i < 150; i++) {
+        char **h = g_ptr_array_index(hits, i);
+        add_result(h[0], h[1], h[2]);
+    }
+    g_ptr_array_free(hits, TRUE);
     char *t = g_strdup_printf("%d programs found", found);
     if (!found) { g_free(t); t = g_strdup(err ? "The search could not run. Is the network up?" : "Nothing found. Try another word."); }
     gtk_label_set_text(GTK_LABEL(ui.results_title), t);
