@@ -276,11 +276,12 @@ static char *strip_ansi(const char *s) {
  * then names that start with it or have it, then the rest */
 static int relevance(const char *attr, const char *q) {
     const char *base = strrchr(attr, '.') ? strrchr(attr, '.') + 1 : attr;
+    int nested = strchr(attr, '.') ? 4 : 0;          /* python313Packages.x, octavePackages.x: libraries, after programs */
     if (find_app(attr)) return 0;
-    if (!g_ascii_strcasecmp(base, q)) return 1;
-    if (!g_ascii_strncasecmp(base, q, strlen(q))) return 2;
-    if (strstr(base, q)) return 3;
-    return 4;
+    if (!g_ascii_strcasecmp(base, q)) return 1 + nested;
+    if (!g_ascii_strncasecmp(base, q, strlen(q))) return 2 + nested;
+    if (strstr(base, q)) return 3 + nested;
+    return 4 + nested;
 }
 
 static gint by_relevance(gconstpointer a, gconstpointer b, gpointer q) {
