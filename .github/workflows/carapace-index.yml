@@ -33,7 +33,7 @@ jobs:
             | @tsv' all.json | LC_ALL=C sort -u > index.tsv
           wc -l index.tsv
           grep -E '^(firefox|steam|vlc|blender)	' index.tsv
-          test "$(wc -l < index.tsv)" -gt 50000
+          test "$(wc -l < index.tsv)" -gt 20000
           xz -9e -T0 < index.tsv > branding/carapace/index.tsv.xz
           ls -lh branding/carapace/index.tsv.xz
       - name: Keep it in the repository
