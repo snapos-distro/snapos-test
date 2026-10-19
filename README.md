@@ -150,6 +150,13 @@ screen shows which one.
 your own NixOS system and add the SnapOS packs you want. The
 [handbook](https://snapos-distro.github.io/handbook/) shows every step.
 
+**Next to another system?** After the disk, the installer asks whether to
+erase the whole disk or to choose the partitions yourself. Choosing them
+keeps everything else (Windows, another distro, your files): you can open the
+partition editor (cfdisk) to make room, then pick the partition for SnapOS,
+the EFI partition (shared with Windows) and, if you want, one for `/home`.
+GRUB then lists the other systems at start.
+
 The installer asks eleven things: network, keyboard, language, time zone, disk,
 account, desktop, look (dark or light) and graphics, then shows a review before
 it installs. The Wi-Fi network you choose is kept, so the installed system
@@ -199,6 +206,11 @@ SOURCE=latest
 
 `SOURCE=latest` (the default) installs the newest SnapOS when the internet is
 up; `SOURCE=bundled` installs the version on the USB stick.
+
+To keep the other partitions (another system, your files), add
+`PARTITIONING=manual` with `ROOT=sda3` (the partition SnapOS goes on: it is
+erased), `BOOT=sda1` (the EFI partition, kept when it is already FAT) and,
+optionally, `HOME=sda4` with `FORMAT_HOME=no`.
 
 </details>
 
