@@ -663,6 +663,7 @@ check "Carapace has Snappy's six scenes" bash -c "for s in flowers mountain swim
 check "Hyprland has a password window for Carapace" grep -q 'hyprpolkitagent' "$ROOT/nix/modules/desktop.nix"
 check "every nixpkgs package can be installed, unfree ones too" bash -c "grep -q 'nixpkgs.config.allowUnfree = true' '$ROOT/nix/packs/store.nix' && grep -q 'config.allowUnfree = true' '$ROOT/flake.nix'"
 check "Steam is on Carapace's first page" grep -q '^steam	Steam	' "$ROOT/branding/carapace/apps.tsv"
+check "Carapace's first page only keeps what runs on the computer" bash -c "grep -q 'lib.meta.availableOn stdenv.hostPlatform' '$ROOT/nix/pkgs/carapace.nix'"
 # net install: the installer takes the newest SnapOS when it is newer and whole
 NI="$TMP/netinst"; mkdir -p "$NI/usb" "$NI/web/releases/latest/download" "$NI/pkg/snapos"
 echo 2.6 > "$NI/usb/VERSION"; echo 2.7 > "$NI/pkg/snapos/VERSION"

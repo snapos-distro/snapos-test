@@ -1,7 +1,18 @@
-{ stdenv, pkg-config, wrapGAppsHook3, gtk3, src }:
+{ lib, stdenv, pkgs, writeText, pkg-config, wrapGAppsHook3, gtk3, src }:
 
 # Carapace, the SnapOS store: the programs from Nix, installed with
 # `snapos add` through pkexec, and Snappy's scenes while it works.
+let
+  # the first page keeps only the programs that exist for this computer
+  # (no Chrome or Spotify on ARM)
+  lines = builtins.filter (l: l != "" && !lib.hasPrefix "#" l)
+    (lib.splitString "\n" (builtins.readFile (src + "/branding/carapace/apps.tsv")));
+  available = l:
+    let p = lib.attrByPath (lib.splitString "." (builtins.head (lib.splitString "\t" l))) null pkgs;
+    in p != null && lib.meta.availableOn stdenv.hostPlatform p;
+  kept = builtins.filter available lines;
+  apps = writeText "apps.tsv" (lib.concatStringsSep "\n" kept + "\n");
+in
 stdenv.mkDerivation {
   pname = "carapace";
   version = "0.1";
@@ -19,7 +30,7 @@ stdenv.mkDerivation {
   installPhase = ''
     runHook preInstall
     install -Dm755 bin/carapace $out/bin/carapace
-    install -Dm644 branding/carapace/apps.tsv $out/share/carapace/apps.tsv
+    install -Dm644 ${apps} $out/share/carapace/apps.tsv
     for g in branding/carapace/scenes/*.gif; do install -Dm644 "$g" $out/share/carapace/scenes/$(basename "$g"); done
     install -Dm644 branding/carapace/carapace.desktop $out/share/applications/carapace.desktop
     install -Dm644 branding/carapace/carapace.svg $out/share/icons/hicolor/scalable/apps/carapace.svg
@@ -28,6 +39,8 @@ stdenv.mkDerivation {
     done
     runHook postInstall
   '';
+
+  passthru = { inherit apps; programs = map (l: builtins.head (lib.splitString "\t" l)) kept; };
 
   meta = {
     description = "Carapace, the SnapOS store";
