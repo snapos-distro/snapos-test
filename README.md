@@ -22,6 +22,10 @@
 
 <a name="before-you-install"></a>
 
+> [!IMPORTANT]
+> **Despite the name, SnapOS does not use Snap!** No Snap packages and no snapd. The name comes from the
+> alligator snapping turtle, our mascot Snappy. Programs come from Nix, with Flatpak and `.deb` files if you want them.
+
 > [!NOTE]
 > **This is the staging repository for SnapOS.** New features and fixes are developed and tested here first. When an update is verified it is carried over to [SnapOS](https://github.com/snapos-distro/SnapOS), the repository that ships the installer ISO.
 
