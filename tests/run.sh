@@ -667,6 +667,10 @@ sed -n '/only what was chosen is erased/,/^else$/p' "$ROOT/nix/installer/snap-in
 check "by hand, only the chosen partition is formatted, never the disk" bash -c "grep -q 'mkfs.ext4 -F -L nixos' '$TMP/manual-block.sh' && ! grep -qE 'sfdisk|parted|wipefs -a \"\\\$TARGET\"' '$TMP/manual-block.sh'"
 check "every nixpkgs package can be installed, unfree ones too" bash -c "grep -q 'allowUnfree = true; }' '$ROOT/nix/packs/store.nix' && grep -q 'config.allowUnfree = true' '$ROOT/flake.nix'"
 check "Steam is on Carapace's first page" grep -q '^steam	Steam	' "$ROOT/branding/carapace/apps.tsv"
+check "Carapace ships the index of every Nix program" grep -q 'xz -dc branding/carapace/index.tsv.xz' "$ROOT/nix/pkgs/carapace.nix"
+check "Carapace's index holds more than 20000 programs" bash -c "[ \$(xz -dc '$ROOT/branding/carapace/index.tsv.xz' | wc -l) -gt 20000 ]"
+check "Carapace searches the index, not nix search" bash -c "grep -q 'index.tsv' '$ROOT/src/carapace.c' && ! grep -q 'nix search' '$ROOT/src/carapace.c'"
+check "every Carapace category has at least seven programs" bash -c "for c in Internet Games Graphics 'Audio & Video' Office Development Utilities Education; do [ \$(awk -F'\t' -v c=\"\$c\" '\$4 == c' '$ROOT/branding/carapace/apps.tsv' | wc -l) -ge 7 ] || exit 1; done"
 check "Carapace's first page only keeps what runs on the computer" bash -c "grep -q 'lib.meta.availableOn stdenv.hostPlatform' '$ROOT/nix/pkgs/carapace.nix'"
 # net install: the installer takes the newest SnapOS when it is newer and whole
 NI="$TMP/netinst"; mkdir -p "$NI/usb" "$NI/web/releases/latest/download" "$NI/pkg/snapos"

@@ -15,7 +15,7 @@ let
 in
 stdenv.mkDerivation {
   pname = "carapace";
-  version = "0.1";
+  version = "0.2";
   inherit src;
 
   nativeBuildInputs = [ pkg-config wrapGAppsHook3 ];
@@ -31,6 +31,7 @@ stdenv.mkDerivation {
     runHook preInstall
     install -Dm755 bin/carapace $out/bin/carapace
     install -Dm644 ${apps} $out/share/carapace/apps.tsv
+    xz -dc branding/carapace/index.tsv.xz > $out/share/carapace/index.tsv
     for g in branding/carapace/scenes/*.gif; do install -Dm644 "$g" $out/share/carapace/scenes/$(basename "$g"); done
     install -Dm644 branding/carapace/carapace.desktop $out/share/applications/carapace.desktop
     install -Dm644 branding/carapace/carapace.svg $out/share/icons/hicolor/scalable/apps/carapace.svg
